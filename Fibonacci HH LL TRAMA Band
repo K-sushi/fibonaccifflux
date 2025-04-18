@@ -1,0 +1,66 @@
+// This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+//hayashipallu
+//@version=6
+indicator('Fibonacci HH LL Trend Regularity Adaptive Moving Average Band Ribbon', shorttitle = 'FIB HHLL TRAMA', overlay = true)
+
+src1 = high
+src2 = low
+length = input(55)
+
+
+ama1 = 0.
+ama2 = 0.
+hh = math.max(math.sign(ta.change(ta.highest(length))), 0)
+ll = math.max(math.sign(ta.change(ta.lowest(length)) * -1), 0)
+tc = math.pow(ta.sma(bool(hh) or bool(ll) ? 1 : 0, length), 2)
+ama1 := nz(ama1[1] + tc * (high - ama1[1]), high)
+ama2 := nz(ama2[1] + tc * (low - ama2[1]), low)
+
+//Midline
+mah = ama1
+mal = ama2
+
+m = (mah + mal) / 2
+
+//Half Mean Range
+dist = (mah - mal) / 2
+
+//Levels
+h6 = m + dist * 11.089
+h5 = m + dist * 6.857
+h4 = m + dist * 4.235
+h3 = m + dist * 2.618
+h2 = m + dist * 1.618
+h1 = m + dist * 0.618
+l1 = m - dist * 0.618
+l2 = m - dist * 1.618
+l3 = m - dist * 2.618
+l4 = m - dist * 4.235
+l5 = m - dist * 6.857
+l6 = m - dist * 11.089
+
+plot(m, linewidth = 3, color = m > m[5] ? color.lime : color.red)
+
+ph6 = plot(h6, color = color.lime)
+ph5 = plot(h5, color = color.lime)
+ph4 = plot(h4, color = color.lime)
+ph3 = plot(h3, color = color.lime)
+ph2 = plot(h2, color = color.lime)
+ph1 = plot(h1, color = color.lime)
+pl6 = plot(l6, color = color.red)
+pl5 = plot(l5, color = color.red)
+pl4 = plot(l4, color = color.red)
+pl3 = plot(l3, color = color.red)
+pl2 = plot(l2, color = color.red)
+pl1 = plot(l1, color = color.red)
+
+fill(ph6, ph5, color = color.new(color.lime, 70), editable = true)
+fill(pl6, pl5, color = color.new(color.red, 70), editable = true)
+fill(ph5, ph4, color = color.new(color.lime, 90), editable = true)
+fill(pl5, pl4, color = color.new(color.red, 90), editable = true)
+fill(ph4, ph3, color = color.new(color.lime, 93), editable = true)
+fill(pl4, pl3, color = color.new(color.red, 93), editable = true)
+fill(ph3, ph2, color = color.new(color.lime, 96), editable = true)
+fill(pl3, pl2, color = color.new(color.red, 96), editable = true)
+fill(ph2, ph1, color = color.new(color.lime, 99), editable = true)
+fill(pl2, pl1, color = color.new(color.red, 99), editable = true)
