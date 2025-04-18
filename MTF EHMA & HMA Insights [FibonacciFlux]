@@ -1,0 +1,57 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// ©FibonacciFlux
+
+//@version=6
+indicator('MTF EHMA & HMA Insights [FibonacciFlux]', shorttitle = 'MEHI -FibonacciFlux', overlay = true)
+
+//************  Inputs
+input_1_Timeframe = input.timeframe('', 'EHMA Resolution:', group = 'Settings')
+input_1_Source = input(close, title = 'EHMA Source', group = 'Settings')
+input_1_MaLength = input.int(title = 'EHMA Length', minval = 1, maxval = 1000, defval = 144, group = 'Settings')
+
+input_2_Timeframe = input.timeframe('', 'HMA Resolution:', group = 'Settings')
+input_2_Source = input(close, title = 'HMA Source', group = 'Settings')
+input_2_MaLength = input.int(title = 'HMA Length', minval = 1, maxval = 1000, defval = 144, group = 'Settings')
+
+//************  Functions
+// Exponential Hull Moving Average (EHMA)
+_funcEHMA(_src, _period) =>
+    tmpVal = math.max(2, _period)
+    ta.ema(2 * ta.ema(_src, tmpVal / 2) - ta.ema(_src, tmpVal), math.round(math.sqrt(tmpVal)))
+
+// Hull Moving Average (HMA)
+_funcHMA(_src, _period) =>
+    wma1 = ta.wma(_src, _period / 2)
+    wma2 = ta.wma(_src, _period)
+    ta.wma(2 * wma1 - wma2, math.round(math.sqrt(_period)))
+
+// Calculate EHMA and HMA
+ehma = request.security(syminfo.tickerid, input_1_Timeframe, _funcEHMA(input_1_Source, input_1_MaLength))
+hma = request.security(syminfo.tickerid, input_2_Timeframe, _funcHMA(input_2_Source, input_2_MaLength))
+
+// Midline m calculation
+m = (ehma + hma) / 2
+
+// Fill condition
+fillColor = ehma < hma ? color.new(color.green, 70) : ehma > hma ? color.new(color.red, 70) : na
+fill(plot(ehma, title = 'EHMA', color = color.blue), plot(hma, title = 'HMA', color = color.red), color = fillColor)
+
+// Midline color condition
+midlineColor = m > m[1] ? color.green : color.red
+
+// Plotting EHMA, HMA, and Midline
+plot(ehma, title = 'EHMA', color = color.blue, linewidth = 1)
+plot(hma, title = 'HMA', color = color.red, linewidth = 1)
+plot(m, title = 'Midline (m)', color = midlineColor, linewidth = 3)
+
+//************ Alert Conditions
+buy_signal = ta.crossover(m, m[1])
+sell_signal = ta.crossunder(m, m[1])
+
+// Create alerts
+alertcondition(buy_signal, title = 'Buy Alert', message = 'Buy Signal: Midline is increasing.')
+alertcondition(sell_signal, title = 'Sell Alert', message = 'Sell Signal: Midline is decreasing.')
+
+// Plot signals with text
+plotshape(buy_signal ? m * 0.9999 : na, title = 'BUY', text = 'BUY', location = location.belowbar, style = shape.labelup, size = size.tiny, color = color.new(color.green, 0), textcolor = color.new(color.white, 0))
+plotshape(sell_signal ? m * 1.0001 : na, title = 'SELL', text = 'SELL', location = location.abovebar, style = shape.labeldown, size = size.tiny, color = color.new(color.red, 0), textcolor = color.new(color.white, 0))
