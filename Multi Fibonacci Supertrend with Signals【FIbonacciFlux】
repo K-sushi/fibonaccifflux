@@ -1,0 +1,65 @@
+//@version=5
+// @description A multi-timeframe Supertrend indicator using Fibonacci ratios (0.618, 1.618, 2.618) with trend signals
+indicator("Multi Fibonacci Supertrend with Signals", shorttitle="MFSS", overlay=true)
+
+// Common ATR Period setting
+// @function Main ATR calculation period for all Supertrend levels
+atrPeriod = input.int(10, "ATR Length", minval=1)
+
+// Fibonacci factor settings
+// @function Three Supertrend factors based on Fibonacci ratios
+factor1 = input.float(0.618, "Factor 1 (Weak)", minval=0.01, step=0.01)    // Golden ratio
+factor2 = input.float(1.618, "Factor 2 (Medium)", minval=0.01, step=0.01)  // Fibonacci ratio
+factor3 = input.float(2.618, "Factor 3 (Strong)", minval=0.01, step=0.01)  // Extension ratio
+
+// Supertrend calculations
+// @function Calculate three Supertrend levels using different Fibonacci factors
+[supertrend1, direction1] = ta.supertrend(factor1, atrPeriod)
+[supertrend2, direction2] = ta.supertrend(factor2, atrPeriod)
+[supertrend3, direction3] = ta.supertrend(factor3, atrPeriod)
+
+// Initialize values
+// @function Handle first bar values
+supertrend1 := barstate.isfirst ? na : supertrend1
+supertrend2 := barstate.isfirst ? na : supertrend2
+supertrend3 := barstate.isfirst ? na : supertrend3
+
+// Trend signals
+// @function Generate buy/sell signals based on price crossing Supertrend2 while Supertrend3 confirms trend
+buy_signal = direction3 < 0 and ta.crossunder(low, supertrend2)
+sell_signal = direction3 > 0 and ta.crossover(high, supertrend2)
+
+// Plot signals with text
+// @function Display BUY/SELL labels on chart
+plotshape(buy_signal ? supertrend2 * 0.9999 : na, title='BUY', text='BUY', location=location.belowbar, 
+         style=shape.labelup, size=size.tiny, color=color.new(color.green, 0), textcolor=color.new(color.white, 0))
+plotshape(sell_signal ? supertrend2 * 1.0001 : na, title='SELL', text='SELL', location=location.abovebar, 
+         style=shape.labeldown, size=size.tiny, color=color.new(color.red, 0), textcolor=color.new(color.white, 0))
+
+// Plotting components
+// @function Plot all Supertrend levels with different line weights and transparencies
+bodyMiddle = plot(barstate.isfirst ? na : (open + close) / 2, "Body Middle", display=display.none)
+
+// Plot Supertrend lines
+upTrend1 = plot(direction1 < 0 ? supertrend1 : na, "Up Trend 1", color=color.new(color.green, 20), style=plot.style_linebr, linewidth=1)
+downTrend1 = plot(direction1 < 0 ? na : supertrend1, "Down Trend 1", color=color.new(color.red, 20), style=plot.style_linebr, linewidth=1)
+
+upTrend2 = plot(direction2 < 0 ? supertrend2 : na, "Up Trend 2", color=color.new(color.green, 40), style=plot.style_linebr, linewidth=2)
+downTrend2 = plot(direction2 < 0 ? na : supertrend2, "Down Trend 2", color=color.new(color.red, 40), style=plot.style_linebr, linewidth=2)
+
+upTrend3 = plot(direction3 < 0 ? supertrend3 : na, "Up Trend 3", color=color.new(color.green, 60), style=plot.style_linebr, linewidth=3)
+downTrend3 = plot(direction3 < 0 ? na : supertrend3, "Down Trend 3", color=color.new(color.red, 60), style=plot.style_linebr, linewidth=3)
+
+// Fill settings
+// @function Fill areas between price and Supertrend levels
+fill(bodyMiddle, upTrend1, color.new(color.green, 95), fillgaps=false)
+fill(bodyMiddle, downTrend1, color.new(color.red, 95), fillgaps=false)
+fill(bodyMiddle, upTrend2, color.new(color.green, 90), fillgaps=false)
+fill(bodyMiddle, downTrend2, color.new(color.red, 90), fillgaps=false)
+fill(bodyMiddle, upTrend3, color.new(color.green, 85), fillgaps=false)
+fill(bodyMiddle, downTrend3, color.new(color.red, 85), fillgaps=false)
+
+// Alert conditions
+// @function Define alert conditions for buy and sell signals
+alertcondition(buy_signal, title="Buy Signal", message="MFSS Buy Signal: Price crossed below Supertrend2 with bullish Supertrend3")
+alertcondition(sell_signal, title="Sell Signal", message="MFSS Sell Signal: Price crossed above Supertrend2 with bearish Supertrend3")
